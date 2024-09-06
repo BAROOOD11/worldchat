@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldChat</title>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+        #chatbox {
+            width: 80%;
+            height: 70vh;
+            background-color: #333;
+            border: 2px solid #444;
+            padding: 10px;
+            overflow-y: scroll;
+            margin-bottom: 10px;
+        }
+        #message-input {
+            width: 80%;
+            padding: 10px;
+            border: none;
+            outline: none;
+            border-radius: 5px;
+            background-color: #444;
+            color: white;
+        }
+        #name-input {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: none;
+            outline: none;
+            border-radius: 5px;
+            background-color: #444;
+            color: white;
+            width: 80%;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #555;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background-color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input id="name-input" type="text" placeholder="Enter your name" />
+        <div id="chatbox"></div>
+        <input id="message-input" type="text" placeholder="Type your message here" />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let username = '';
+
+        document.getElementById('name-input').addEventListener('blur', () => {
+            username = document.getElementById('name-input').value;
+        });
+
+        socket.on('chat history', (messages) => {
+            const chatbox = document.getElementById('chatbox');
+            chatbox.innerHTML = '';
+            messages.forEach((message) => {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = `${message.username}: ${message.message}`;
+                messageElement.id = message.time;
+                chatbox.appendChild(messageElement);
+            });
+        });
+
+        socket.on('receive message', (message) => {
+            const chatbox = document.getElementById('chatbox');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${message.username}: ${message.message}`;
+            messageElement.id = message.time;
+            chatbox.appendChild(messageElement);
+        });
+
+        socket.on('delete message', (messageTime) => {
+            const messageElement = document.getElementById(messageTime);
+            if (messageElement) {
+                messageElement.remove();
+            }
+        });
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+
+            if (username && message) {
+                socket.emit('send message', { username, message });
+                messageInput.value = '';
+            } else {
+                alert('Enter your name and a message!');
+            }
+        }
+    </script>
+</body>
+</html>
